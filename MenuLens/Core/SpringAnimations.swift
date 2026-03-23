@@ -16,6 +16,7 @@ enum AppAnimation {
     static let scannerFocus = Animation.spring(duration: 0.3, bounce: 0.1)
     static let scanResultReveal = Animation.spring(duration: 0.5, bounce: 0.25)
     static let scanHighlight = Animation.spring(duration: 0.4, bounce: 0.2)
+    static let ocrDetect = Animation.spring(duration: 0.25, bounce: 0.3)
 
     // MARK: - Semantic: UI
     static let cardExpand = Animation.spring(duration: 0.45, bounce: 0.2)
@@ -27,19 +28,102 @@ enum AppAnimation {
     // MARK: - Micro-interactions
     static let buttonPress = Animation.spring(duration: 0.2, bounce: 0.3)
     static let iconPop = Animation.spring(duration: 0.4, bounce: 0.5)
+    static let shutterClick = Animation.spring(duration: 0.15, bounce: 0.2)
+}
+
+// MARK: - Transition Presets
+
+enum TransitionPreset {
+    /// Scan result cards slide up
+    static let scanResult: AnyTransition = .asymmetric(
+        insertion: .move(edge: .bottom).combined(with: .opacity),
+        removal: .opacity
+    )
+
+    /// Card expand/collapse
+    static let cardPresent: AnyTransition = .asymmetric(
+        insertion: .scale(scale: 0.9).combined(with: .opacity),
+        removal: .scale(scale: 0.95).combined(with: .opacity)
+    )
+
+    /// Allergen badge pop
+    static let badgePop: AnyTransition = .scale(scale: 0.3).combined(with: .opacity)
+
+    /// Camera mode switch
+    static let cameraSwitch: AnyTransition = .opacity
+
+    /// Dish detail expand
+    static let dishDetail: AnyTransition = .asymmetric(
+        insertion: .scale(scale: 0.85).combined(with: .opacity),
+        removal: .scale(scale: 0.95).combined(with: .opacity)
+    )
+}
+
+// MARK: - Haptic-Coupled Animations
+
+struct HapticSpring {
+    static func impact(_ style: UIImpactFeedbackGenerator.FeedbackStyle = .medium,
+                       animation: Animation = AppAnimation.buttonPress,
+                       _ body: @escaping () -> Void) {
+        UIImpactFeedbackGenerator(style: style).impactOccurred()
+        withAnimation(animation, body)
+    }
+
+    static func notification(_ type: UINotificationFeedbackGenerator.FeedbackType,
+                             animation: Animation = AppAnimation.scanResultReveal,
+                             _ body: @escaping () -> Void) {
+        UINotificationFeedbackGenerator().notificationOccurred(type)
+        withAnimation(animation, body)
+    }
+
+    /// Shutter-style feedback for scan capture
+    static func shutter(_ body: @escaping () -> Void) {
+        UIImpactFeedbackGenerator(style: .rigid).impactOccurred()
+        withAnimation(AppAnimation.shutterClick, body)
+    }
+
+    static func selection(animation: Animation = AppAnimation.snappySpring,
+                          _ body: @escaping () -> Void) {
+        UISelectionFeedbackGenerator().selectionChanged()
+        withAnimation(animation, body)
+    }
 }
 
 // MARK: - View Modifiers
 
 struct BounceOnAppear: ViewModifier {
     @State private var appeared = false
+    let delay: Double
+    let spring: Animation
+
+    init(delay: Double = 0, spring: Animation = AppAnimation.bouncySpring) {
+        self.delay = delay
+        self.spring = spring
+    }
 
     func body(content: Content) -> some View {
         content
             .scaleEffect(appeared ? 1 : 0.5)
             .opacity(appeared ? 1 : 0)
             .onAppear {
-                withAnimation(AppAnimation.bouncySpring) {
+                withAnimation(spring.delay(delay)) {
+                    appeared = true
+                }
+            }
+    }
+}
+
+struct StaggeredAppear: ViewModifier {
+    let index: Int
+    let baseDelay: Double
+    @State private var appeared = false
+
+    func body(content: Content) -> some View {
+        content
+            .offset(y: appeared ? 0 : 20)
+            .opacity(appeared ? 1 : 0)
+            .onAppear {
+                withAnimation(AppAnimation.gentleSpring.delay(baseDelay + Double(index) * 0.06)) {
                     appeared = true
                 }
             }
@@ -52,6 +136,7 @@ struct PressableButton: ViewModifier {
     func body(content: Content) -> some View {
         content
             .scaleEffect(isPressed ? 0.95 : 1)
+            .opacity(isPressed ? 0.85 : 1)
             .animation(AppAnimation.buttonPress, value: isPressed)
             .simultaneousGesture(
                 DragGesture(minimumDistance: 0)
@@ -63,13 +148,16 @@ struct PressableButton: ViewModifier {
 
 struct ScanRevealEffect: ViewModifier {
     @State private var revealed = false
+    let delay: Double
+
+    init(delay: Double = 0) { self.delay = delay }
 
     func body(content: Content) -> some View {
         content
             .offset(y: revealed ? 0 : 20)
             .opacity(revealed ? 1 : 0)
             .onAppear {
-                withAnimation(AppAnimation.scanResultReveal) {
+                withAnimation(AppAnimation.scanResultReveal.delay(delay)) {
                     revealed = true
                 }
             }
@@ -95,19 +183,32 @@ struct ScannerPulse: ViewModifier {
 // MARK: - View Extensions
 
 extension View {
-    func bounceOnAppear() -> some View {
-        modifier(BounceOnAppear())
+    func bounceOnAppear(delay: Double = 0) -> some View {
+        modifier(BounceOnAppear(delay: delay))
+    }
+
+    func staggeredAppear(index: Int, baseDelay: Double = 0) -> some View {
+        modifier(StaggeredAppear(index: index, baseDelay: baseDelay))
     }
 
     func pressable() -> some View {
         modifier(PressableButton())
     }
 
-    func scanReveal() -> some View {
-        modifier(ScanRevealEffect())
+    func scanReveal(delay: Double = 0) -> some View {
+        modifier(ScanRevealEffect(delay: delay))
     }
 
     func scannerPulse() -> some View {
         modifier(ScannerPulse())
+    }
+
+    func withSpring(_ preset: Animation, value: some Equatable) -> some View {
+        animation(preset, value: value)
+    }
+
+    func springWithHaptic(_ preset: Animation = AppAnimation.buttonPress, value: some Equatable) -> some View {
+        animation(preset, value: value)
+            .sensoryFeedback(.impact(flexibility: .rigid), trigger: value)
     }
 }
