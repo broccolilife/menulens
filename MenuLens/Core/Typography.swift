@@ -1,136 +1,120 @@
 import SwiftUI
 
-// MARK: - Typography System
-/// Semantic type scale for MenuLens.
-/// Clean, readable fonts optimized for scanned text display.
+// MARK: - Typography System for MenuLens
+
+/// Semantic type styles with Dynamic Type support.
+/// Clean, legible system for scanning/reading menus.
 
 enum AppTypography {
 
-    // MARK: - Display
-    static let displayLarge = Font.system(.largeTitle, design: .rounded, weight: .bold)
-    static let displayMedium = Font.system(size: 28, weight: .bold, design: .rounded)
-    static let displaySmall = Font.system(size: 24, weight: .semibold, design: .rounded)
+    // MARK: - Display & Headings
 
-    // MARK: - Headings
-    static let headingLarge = Font.system(.title, design: .rounded, weight: .semibold)
-    static let headingMedium = Font.system(.title2, design: .rounded, weight: .semibold)
-    static let headingSmall = Font.system(.title3, design: .rounded, weight: .medium)
+    /// Display — restaurant name, splash title
+    static let display = Font.system(.largeTitle, weight: .bold)
 
-    // MARK: - Body
-    static let bodyLarge = Font.system(.body, design: .default, weight: .regular)
-    static let bodyMedium = Font.system(.callout, design: .default, weight: .regular)
-    static let bodySmall = Font.system(.footnote, design: .default, weight: .regular)
+    /// Title — screen titles
+    static let title = Font.system(.title2, weight: .bold)
 
-    // MARK: - Labels
-    static let labelLarge = Font.system(.body, design: .default, weight: .semibold)
-    static let labelMedium = Font.system(.callout, design: .default, weight: .medium)
-    static let labelSmall = Font.system(.caption, design: .default, weight: .medium)
-    static let labelMicro = Font.system(.caption2, design: .default, weight: .bold)
+    /// Subtitle — section headers
+    static let subtitle = Font.system(.title3, weight: .semibold)
 
-    // MARK: - Special: Menu & Dish display
-    static let dishName = Font.system(size: 22, weight: .semibold, design: .serif)
-    static let dishDescription = Font.system(.callout, design: .default, weight: .regular)
-    static let price = Font.system(size: 18, weight: .bold, design: .rounded)
-    static let priceSmall = Font.system(size: 14, weight: .semibold, design: .rounded)
-    static let translatedText = Font.system(.body, design: .default, weight: .medium)
-    static let originalText = Font.system(.callout, design: .serif, weight: .regular)
-    static let allergenTag = Font.system(.caption2, design: .rounded, weight: .bold)
-    static let scanInstruction = Font.system(.subheadline, design: .rounded, weight: .medium)
+    /// Headline — dish names, card headers
+    static let headline = Font.system(.headline, weight: .semibold)
 
-    // MARK: - Semantic Contexts
-    enum Semantic {
-        /// Camera overlay instruction text
-        static let cameraGuide: Font = .system(size: 16, weight: .medium, design: .rounded)
-        /// OCR confidence display
-        static let confidence: Font = .system(size: 12, weight: .semibold, design: .monospaced)
-        /// Calorie/nutrition data
-        static let nutritionValue: Font = .system(size: 15, weight: .semibold, design: .monospaced)
-        /// Restaurant name
-        static let restaurantName: Font = .system(size: 20, weight: .bold, design: .default)
-        /// Category headers in menu
-        static let menuCategory: Font = .system(size: 18, weight: .semibold, design: .rounded)
-        /// Button labels
-        static let button: Font = .system(size: 16, weight: .semibold, design: .rounded)
-    }
+    // MARK: - Body & Detail
 
-    // MARK: - Dynamic Type Scaling
-    static func scaled(_ size: CGFloat, weight: Font.Weight = .regular,
-                       design: Font.Design = .default, relativeTo style: Font.TextStyle = .body) -> Font {
-        .system(size: size, weight: weight, design: design)
-    }
+    /// Body — descriptions, ingredient lists
+    static let body = Font.system(.body)
+
+    /// Callout — allergen notes, tips
+    static let callout = Font.system(.callout)
+
+    /// Caption — scanned metadata, confidence
+    static let caption = Font.system(.caption)
+
+    /// Micro — badges, tiny labels
+    static let micro = Font.system(.caption2, weight: .medium)
+
+    // MARK: - Specialized
+
+    /// Price — prominent, monospaced digits for dish prices
+    static let price = Font.system(.title3, design: .rounded, weight: .bold)
+
+    /// OCR result — monospaced for raw scan text
+    static let ocrRaw = Font.system(.body, design: .monospaced)
+
+    /// Allergen tag — small, bold for warning badges
+    static let allergenTag = Font.system(.caption, weight: .bold)
+
+    /// Calorie — rounded for nutrition stats
+    static let nutrition = Font.system(.headline, design: .rounded, weight: .semibold)
+
+    // MARK: - Line Heights
+
+    static let tightLeading: CGFloat = 1.1
+    static let normalLeading: CGFloat = 1.4
+    static let relaxedLeading: CGFloat = 1.6
+
+    // MARK: - Tracking
+
+    static let tightTracking: CGFloat = -0.5
+    static let normalTracking: CGFloat = 0
+    static let wideTracking: CGFloat = 1.0
 }
 
-// MARK: - Text Style Modifier
-
-struct AppTextStyle: ViewModifier {
-    let font: Font
-    let color: Color
-    let tracking: CGFloat
-    let lineSpacing: CGFloat
-
-    init(_ font: Font, color: Color = DesignTokens.Colors.textPrimary, tracking: CGFloat = 0, lineSpacing: CGFloat = 0) {
-        self.font = font
-        self.color = color
-        self.tracking = tracking
-        self.lineSpacing = lineSpacing
-    }
-
-    func body(content: Content) -> some View {
-        content
-            .font(font)
-            .foregroundStyle(color)
-            .tracking(tracking)
-            .lineSpacing(lineSpacing)
-    }
-}
-
-// MARK: - View Extensions
+// MARK: - View Modifiers
 
 extension View {
-    func textStyle(_ font: Font, color: Color = DesignTokens.Colors.textPrimary, tracking: CGFloat = 0, lineSpacing: CGFloat = 0) -> some View {
-        modifier(AppTextStyle(font, color: color, tracking: tracking, lineSpacing: lineSpacing))
+    func textStyle(_ font: Font, color: Color = DesignTokens.Colors.textPrimary) -> some View {
+        self
+            .font(font)
+            .foregroundStyle(color)
     }
 
-    /// Dish name — serif, warm
+    /// Dish name style with primary emphasis.
     func dishNameStyle() -> some View {
-        modifier(AppTextStyle(AppTypography.dishName, tracking: -0.2))
+        self
+            .font(AppTypography.headline)
+            .foregroundStyle(DesignTokens.Colors.textPrimary)
     }
 
-    /// Price tag — bold, rounded
+    /// Price display — rounded, prominent.
     func priceStyle() -> some View {
-        modifier(AppTextStyle(AppTypography.price, color: DesignTokens.Colors.priceTag))
+        self
+            .font(AppTypography.price)
+            .monospacedDigit()
+            .foregroundStyle(DesignTokens.Colors.priceTag)
     }
 
-    /// Translated text emphasis
-    func translatedStyle() -> some View {
-        modifier(AppTextStyle(AppTypography.translatedText, color: DesignTokens.Colors.textPrimary, lineSpacing: 2))
+    /// Allergen warning badge text.
+    func allergenTagStyle() -> some View {
+        self
+            .font(AppTypography.allergenTag)
+            .foregroundStyle(DesignTokens.Colors.allergenWarning)
+            .textCase(.uppercase)
+            .tracking(AppTypography.wideTracking)
     }
 
-    /// Original foreign text (lighter, serif)
-    func originalTextStyle() -> some View {
-        modifier(AppTextStyle(AppTypography.originalText, color: DesignTokens.Colors.textSecondary))
+    /// Nutrition stat readout.
+    func nutritionStyle() -> some View {
+        self
+            .font(AppTypography.nutrition)
+            .monospacedDigit()
     }
 }
 
 // MARK: - Text Convenience
 
 extension Text {
-    func dishName() -> Text {
-        self.font(AppTypography.dishName)
+    func captionSecondary() -> Text {
+        self
+            .font(AppTypography.caption)
+            .foregroundStyle(DesignTokens.Colors.textSecondary)
     }
 
-    func price() -> Text {
-        self.font(AppTypography.price)
-            .fontWeight(.bold)
-    }
-
-    func allergen() -> Text {
-        self.font(AppTypography.allergenTag)
-            .fontWeight(.bold)
-    }
-
-    func sectionHeader() -> Text {
-        self.font(AppTypography.headingMedium)
-            .foregroundColor(.secondary)
+    func ocrResultStyle() -> Text {
+        self
+            .font(AppTypography.ocrRaw)
+            .foregroundStyle(DesignTokens.Colors.textSecondary)
     }
 }
