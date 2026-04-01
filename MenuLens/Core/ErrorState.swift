@@ -64,6 +64,36 @@ enum AppError: LocalizedError, Equatable {
         case .cameraUnavailable, .notFound, .unauthorized, .generic: return false
         }
     }
+
+    /// User-friendly short title for error banners and toasts.
+    var shortTitle: String {
+        switch self {
+        case .network: return "No Connection"
+        case .cameraUnavailable: return "Camera Blocked"
+        case .ocrFailed: return "Can't Read Menu"
+        case .translationFailed: return "Translation Failed"
+        case .notFound: return "Not Found"
+        case .unauthorized: return "Sign In Required"
+        case .serverError: return "Server Issue"
+        case .timeout: return "Too Slow"
+        case .generic: return "Something Went Wrong"
+        }
+    }
+
+    /// Debug-level description for logging (not shown to users).
+    var debugDescription: String {
+        switch self {
+        case .network(let msg): return "NetworkError: \(msg)"
+        case .cameraUnavailable: return "CameraUnavailable: AVCaptureDevice authorization denied or restricted"
+        case .ocrFailed(let msg): return "OCRFailed: VNRecognizeTextRequest error — \(msg)"
+        case .translationFailed(let msg): return "TranslationFailed: \(msg)"
+        case .notFound: return "NotFound: requested resource does not exist"
+        case .unauthorized: return "Unauthorized: auth token expired or invalid"
+        case .serverError(let code, let msg): return "ServerError(\(code)): \(msg)"
+        case .timeout: return "Timeout: request exceeded deadline"
+        case .generic(let msg): return "GenericError: \(msg)"
+        }
+    }
 }
 
 // MARK: - Error State View
@@ -71,11 +101,19 @@ enum AppError: LocalizedError, Equatable {
 struct ErrorStateView: View {
     let error: AppError
     var retryAction: (() -> Void)?
+    var retryCount: Int = 0
+    private let maxAutoRetries = 3
 
     var body: some View {
         VStack(spacing: DesignTokens.Spacing.md) {
             errorIcon
             errorText
+            if retryCount >= maxAutoRetries {
+                Text("Multiple attempts failed. Try a different approach or contact support.")
+                    .font(AppTypography.bodySmall)
+                    .foregroundStyle(.tertiary)
+                    .multilineTextAlignment(.center)
+            }
             if let retryAction, error.isRetryable {
                 retryButton(action: retryAction)
             }
