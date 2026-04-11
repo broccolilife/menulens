@@ -1,0 +1,18 @@
+# Xcode
+build/
+DerivedData/
+*.xcuserstate
+*.xcworkspace
+!*.xcworkspace/contents.xcworkspacedata
+
+# Swift Package Manager
+.build/
+Packages/
+
+# Environment
+.env
+.env.local
+
+# macOS
+.DS_Store
+*.swp
